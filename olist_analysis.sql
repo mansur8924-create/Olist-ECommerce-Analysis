@@ -12,14 +12,10 @@ DESCRIPTION:
 ================================================================================
 */
 
--- --- STEP 1: DATABASE ARCHITECTURE ---
--- --- ---------------------------------
+
 CREATE DATABASE IF NOT EXISTS olist_project;
 USE olist_project;
 
--- 1.1 Products Table Setup
--- NOTE: Using VARCHAR for numeric dimensions temporarily to ensure 100% data 
--- ingestion success regardless of source formatting inconsistencies.
 CREATE TABLE IF NOT EXISTS olist_products_dataset (
     product_id VARCHAR(50) PRIMARY KEY,
     product_category_name VARCHAR(100),
@@ -32,7 +28,6 @@ CREATE TABLE IF NOT EXISTS olist_products_dataset (
     product_width_cm VARCHAR(10)
 );
 
--- 1.2 Translation Table Setup
 -- WHY: Standardizing Portuguese categories to English for global business reporting.
 CREATE TABLE IF NOT EXISTS product_category_name_translation (
     product_category_name VARCHAR(100),
@@ -50,8 +45,6 @@ CREATE TABLE IF NOT EXISTS olist_order_reviews_dataset (
     review_answer_timestamp VARCHAR(50)
 );
 
--- --- STEP 2: DATA INGESTION PROTOCOLS ---
--- --- ------------------------------------
 -- INSTRUCTIONS: Update the file paths below to match your local secure directory.
 
 LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/olist_products_dataset.csv'
@@ -66,11 +59,6 @@ LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/olist_order_revi
 INTO TABLE olist_order_reviews_dataset
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-
--- --- STEP 3: ADVANCED BUSINESS INTELLIGENCE QUERIES ---
--- --- --------------------------------------------------
-
--- 3.1 Regional Logistics Performance
 -- WHAT: Average delivery time calculated per State.
 -- WHY: To identify geographical bottlenecks in the supply chain.
 SELECT 
@@ -82,10 +70,8 @@ WHERE o.order_delivered_customer_date IS NOT NULL
 GROUP BY c.customer_state
 ORDER BY avg_delivery_days DESC;
 
--- 3.2 EXECUTIVE PERFORMANCE REPORT (360-Degree View)
 -- WHAT: A master query combining Sales, Logistics, and Satisfaction metrics.
 -- WHY: To provide leadership with a single view of category health and operational efficiency.
--- 
 SELECT 
     t.product_category_name_english AS category,
     
