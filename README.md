@@ -1,6 +1,7 @@
 # Olist-ECommerce-Analysis
 
 Project Overview
+
 This project involves a comprehensive analysis of the Brazilian Olist E-Commerce dataset. Using complex SQL queries, I explored over 100,000 orders to uncover insights into sales performance, customer behavior, and logistics efficiency. The goal was to provide actionable data regarding regional sales trends and delivery performance.
 
 Tools & Technologies
