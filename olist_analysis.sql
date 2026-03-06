@@ -1,21 +1,22 @@
 /*
 ================================================================================
-PROJECT: Olist E-Commerce Multi-Dimensional Business Intelligence
+PROJECT: Olist E-Commerce Business Intelligence
 AUTHOR: Mansur Mohammed (York University - Business Economics)
 FILE: olist_master_analysis.sql
 DESCRIPTION: 
-    This script serves as the complete technical foundation for analyzing over 
-    100,000 orders from the Olist Brazilian marketplace. It includes:
-    1. Schema Architecture & Data Ingestion Protocols
-    2. Data Normalization (English Category Translations)
-    3. Multi-Dimensional Business Health Reporting
+    Complete analysis pipeline for Olist Brazilian marketplace orders.
+    Includes:
+    1. Schema creation and CSV ingestion
+    2. Product category translation
+    3. Key metrics: Sales, Delivery, Customer Satisfaction
 ================================================================================
 */
 
-
+-- Create project database
 CREATE DATABASE IF NOT EXISTS olist_project;
 USE olist_project;
 
+-- Products table
 CREATE TABLE IF NOT EXISTS olist_products_dataset (
     product_id VARCHAR(50) PRIMARY KEY,
     product_category_name VARCHAR(100),
@@ -28,13 +29,13 @@ CREATE TABLE IF NOT EXISTS olist_products_dataset (
     product_width_cm VARCHAR(10)
 );
 
--- WHY: Standardizing Portuguese categories to English for global business reporting.
+-- Category translation table (Portuguese -> English)
 CREATE TABLE IF NOT EXISTS product_category_name_translation (
     product_category_name VARCHAR(100),
     product_category_name_english VARCHAR(100)
 );
 
--- 1.3 Order Reviews Table Setup
+-- Order reviews table
 CREATE TABLE IF NOT EXISTS olist_order_reviews_dataset (
     review_id VARCHAR(100),
     order_id VARCHAR(100),
@@ -45,8 +46,7 @@ CREATE TABLE IF NOT EXISTS olist_order_reviews_dataset (
     review_answer_timestamp VARCHAR(50)
 );
 
--- INSTRUCTIONS: Update the file paths below to match your local secure directory.
-
+-- Load CSV data (update paths as needed)
 LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/olist_products_dataset.csv'
 INTO TABLE olist_products_dataset
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
@@ -59,8 +59,7 @@ LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/olist_order_revi
 INTO TABLE olist_order_reviews_dataset
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
--- WHAT: Average delivery time calculated per State.
--- WHY: To identify geographical bottlenecks in the supply chain.
+-- Average delivery time by state
 SELECT 
     c.customer_state,
     ROUND(AVG(DATEDIFF(o.order_delivered_customer_date, o.order_purchase_timestamp)), 2) AS avg_delivery_days
@@ -70,23 +69,22 @@ WHERE o.order_delivered_customer_date IS NOT NULL
 GROUP BY c.customer_state
 ORDER BY avg_delivery_days DESC;
 
--- WHAT: A master query combining Sales, Logistics, and Satisfaction metrics.
--- WHY: To provide leadership with a single view of category health and operational efficiency.
+-- Category-level dashboard combining sales, logistics, and satisfaction
 SELECT 
     t.product_category_name_english AS category,
     
-    -- SALES DATA
+    -- Sales
     COUNT(DISTINCT o.order_id) AS total_orders,
     ROUND(SUM(oi.price), 2) AS total_revenue,
     ROUND(AVG(oi.price), 2) AS avg_ticket_size,
     
-    -- LOGISTICS DATA
+    -- Logistics
     ROUND(AVG(DATEDIFF(o.order_delivered_customer_date, o.order_purchase_timestamp)), 1) AS avg_delivery_time_days,
     
-    -- CUSTOMER SATISFACTION
+    -- Customer satisfaction
     ROUND(AVG(r.review_score), 2) AS avg_review_score,
     
-    -- OPERATIONAL HEALTH (Metric: On-Time Delivery %)
+    -- Operational health: On-time delivery %
     ROUND(SUM(CASE WHEN o.order_delivered_customer_date <= o.order_estimated_delivery_date THEN 1 ELSE 0 END) 
           / COUNT(o.order_id) * 100, 2) AS pct_on_time_delivery
 
@@ -96,7 +94,7 @@ JOIN olist_products_dataset p ON oi.product_id = p.product_id
 JOIN product_category_name_translation t ON p.product_category_name = t.product_category_name
 JOIN olist_order_reviews_dataset r ON o.order_id = r.order_id
 
-WHERE o.order_status = 'delivered' -- Focused on completed business cycles.
+WHERE o.order_status = 'delivered'
 GROUP BY 1
-HAVING total_orders > 100 -- Focused on statistically significant categories.
+HAVING total_orders > 100
 ORDER BY total_revenue DESC;
